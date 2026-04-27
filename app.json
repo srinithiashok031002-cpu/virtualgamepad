@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "VirtualGamePad",
+    "slug": "virtual-gamepad",
+    "version": "1.0.0",
+    "orientation": "landscape",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1a1a2e"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1a1a2e"
+      },
+      "package": "com.virtualgamepad.app",
+      "permissions": [
+        "android.permission.VIBRATE"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-screen-orientation",
+        {
+          "initialOrientation": "LANDSCAPE"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "efc880ed-ada2-43b9-b385-0480b828bbe3"
+      }
+    },
+    "owner": "batfiti"
+  }
+}
