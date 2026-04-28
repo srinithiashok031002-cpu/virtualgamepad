@@ -4,7 +4,9 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothHidDevice
 import android.bluetooth.BluetoothHidDeviceAppSdpSettings
+import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
+import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import expo.modules.kotlin.modules.Module
@@ -71,7 +73,14 @@ class BluetoothHidModule : Module() {
     // ─── State ────────────────────────────────────────────────────────────────
     private var hidDevice: BluetoothHidDevice? = null
     private var connectedHost: BluetoothDevice? = null
-    private val adapter: BluetoothAdapter? get() = BluetoothAdapter.getDefaultAdapter()
+
+    // Use BluetoothManager (API 31+ preferred; getDefaultAdapter() deprecated since 31)
+    private val adapter: BluetoothAdapter?
+        get() {
+            val ctx = appContext.reactContext ?: return null
+            val mgr = ctx.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+            return mgr?.adapter ?: @Suppress("DEPRECATION") BluetoothAdapter.getDefaultAdapter()
+        }
 
     override fun definition() = ModuleDefinition {
         Name("BluetoothHidModule")
@@ -90,7 +99,12 @@ class BluetoothHidModule : Module() {
                 return@AsyncFunction
             }
 
-            bt.getProfileProxy(appContext.reactContext!!, object : BluetoothProfile.ServiceListener {
+            val ctx = appContext.reactContext
+            if (ctx == null) {
+                promise.reject("NO_CONTEXT", "React context is null", null)
+                return@AsyncFunction
+            }
+            bt.getProfileProxy(ctx, object : BluetoothProfile.ServiceListener {
                 override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
                     val hid = proxy as BluetoothHidDevice
                     hidDevice = hid
