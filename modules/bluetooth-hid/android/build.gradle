@@ -1,26 +1,11 @@
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
-apply plugin: 'expo-module-gradle-plugin'
-
-android {
-    compileSdkVersion safeExtGet("compileSdkVersion", 34)
-    namespace "expo.modules.bluetoothhid"
-
-    defaultConfig {
-        minSdkVersion safeExtGet("minSdkVersion", 26)
-        targetSdkVersion safeExtGet("targetSdkVersion", 34)
-    }
-
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
-    }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17
-    }
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
 }
 
-dependencies {
-    implementation project(':expo-modules-core')
+group = 'expo.modules'
+version = '1.0.0'
+
+android {
+  namespace "expo.modules.bluetoothhid"
 }
