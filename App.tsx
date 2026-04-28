@@ -2,7 +2,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, StyleSheet, View } from 'react-native';
+import { SafeAreaView, StatusBar as RNStatusBar, StyleSheet, View } from 'react-native';
 
 import { SettingsProvider, useSettings } from './src/context/SettingsContext';
 import { ConnectionProvider } from './src/context/ConnectionContext';
@@ -89,7 +89,8 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#111118',
-    // Small breathing room on all sides so nothing touches the bezel
+    // Push content below status bar + breathing room on all sides
+    paddingTop: (RNStatusBar.currentHeight ?? 24) + 4,
     paddingHorizontal: 8,
     paddingBottom: 8,
   },
