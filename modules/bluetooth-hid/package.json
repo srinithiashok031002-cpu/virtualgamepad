@@ -1,0 +1,6 @@
+{
+  "name": "bluetooth-hid",
+  "version": "1.0.0",
+  "description": "Expo native module: Bluetooth HID gamepad peripheral",
+  "main": "index.ts"
+}

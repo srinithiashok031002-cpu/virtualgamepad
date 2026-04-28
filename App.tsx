@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { SafeAreaView, StyleSheet, View } from 'react-native';
 
 import { SettingsProvider, useSettings } from './src/context/SettingsContext';
+import { ConnectionProvider } from './src/context/ConnectionContext';
 import { ControllerSwitcher } from './src/components/ControllerSwitcher';
 import { InputLog } from './src/components/InputLog';
 import { useInputLog } from './src/hooks/useInputLog';
@@ -71,7 +72,9 @@ export default function App() {
     <GestureHandlerRootView style={styles.root}>
       <StatusBar hidden />
       <SettingsProvider>
-        <AppInner />
+        <ConnectionProvider>
+          <AppInner />
+        </ConnectionProvider>
       </SettingsProvider>
     </GestureHandlerRootView>
   );

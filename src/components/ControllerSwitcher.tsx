@@ -7,7 +7,9 @@ import {
   View,
 } from 'react-native';
 import { useSettings } from '../context/SettingsContext';
+import { useConnection } from '../context/ConnectionContext';
 import { SettingsPanel } from './SettingsPanel';
+import { ConnectionPanel } from './ConnectionPanel';
 import { CONTROLLER_LABELS, ControllerType } from '../types';
 
 const CONTROLLERS: ControllerType[] = [
@@ -33,12 +35,22 @@ interface ControllerSwitcherProps {
   onChange: (controller: ControllerType) => void;
 }
 
+// Status dot colour per connection status
+const STATUS_COLOR: Record<string, string> = {
+  connected:    '#00d4aa',
+  connecting:   '#f4a261',
+  error:        '#e63946',
+  disconnected: '#444',
+};
+
 export const ControllerSwitcher: React.FC<ControllerSwitcherProps> = ({
   current,
   onChange,
 }) => {
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsOpen,    setSettingsOpen]    = useState(false);
+  const [connectionOpen,  setConnectionOpen]  = useState(false);
   const { customizeMode } = useSettings();
+  const { status } = useConnection();
 
   return (
     <>
@@ -68,19 +80,30 @@ export const ControllerSwitcher: React.FC<ControllerSwitcherProps> = ({
           })}
         </ScrollView>
 
+        {/* Connection 📡 button with status dot */}
+        <TouchableOpacity
+          style={styles.iconBtn}
+          onPress={() => setConnectionOpen(true)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.iconText}>📡</Text>
+          <View style={[styles.statusDot, { backgroundColor: STATUS_COLOR[status] ?? '#444' }]} />
+        </TouchableOpacity>
+
         {/* Settings gear */}
         <TouchableOpacity
-          style={[styles.gearBtn, customizeMode && styles.gearBtnActive]}
+          style={[styles.iconBtn, customizeMode && styles.gearBtnActive]}
           onPress={() => setSettingsOpen(true)}
           activeOpacity={0.7}
         >
-          <Text style={[styles.gearIcon, customizeMode && styles.gearIconActive]}>
+          <Text style={[styles.iconText, customizeMode && styles.gearIconActive]}>
             {customizeMode ? '✎' : '⚙'}
           </Text>
         </TouchableOpacity>
       </View>
 
-      <SettingsPanel visible={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsPanel    visible={settingsOpen}   onClose={() => setSettingsOpen(false)} />
+      <ConnectionPanel  visible={connectionOpen} onClose={() => setConnectionOpen(false)} />
     </>
   );
 };
@@ -117,7 +140,7 @@ const styles = StyleSheet.create({
   tabTextActive: {
     color: '#ffffff',
   },
-  gearBtn: {
+  iconBtn: {
     width: 36,
     height: 36,
     justifyContent: 'center',
@@ -128,11 +151,21 @@ const styles = StyleSheet.create({
   gearBtnActive: {
     backgroundColor: 'rgba(124,77,255,0.2)',
   },
-  gearIcon: {
+  iconText: {
     fontSize: 16,
     color: '#666',
   },
   gearIconActive: {
     color: '#7c4dff',
+  },
+  statusDot: {
+    position: 'absolute',
+    bottom: 6,
+    right: 6,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#0d0d1a',
   },
 });

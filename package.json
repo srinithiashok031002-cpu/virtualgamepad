@@ -5,9 +5,11 @@
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
-    "build:preview": "eas build --platform android --profile preview"
+    "build:preview": "eas build --platform android --profile preview",
+    "ios": "expo run:ios"
   },
   "dependencies": {
+    "bluetooth-hid": "file:./modules/bluetooth-hid",
     "expo": "~54.0.34",
     "expo-haptics": "~15.0.8",
     "expo-screen-orientation": "~9.0.9",
