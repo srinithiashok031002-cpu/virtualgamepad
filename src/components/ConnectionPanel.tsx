@@ -177,17 +177,32 @@ const BluetoothTab: React.FC<BtTabProps> = ({
   devices, connectedId, isConnecting, onScan, onConnect, onDisconnect,
 }) => (
   <View style={styles.tabContent}>
-    <Text style={styles.hint}>
-      On your Android TV, go to{'\n'}
-      Settings → Remotes &amp; Accessories → Add Accessory{'\n'}
-      then tap Scan below to make the phone discoverable.
-    </Text>
-
-    <TouchableOpacity style={styles.actionBtn} onPress={onScan} disabled={isConnecting}>
-      <Text style={styles.actionBtnText}>
-        {isConnecting ? 'Advertising…' : '🔍  Make Phone Discoverable'}
+    {!isConnecting && !connectedId && (
+      <Text style={styles.hint}>
+        Tap the button below, then on your Android TV go to{'\n'}
+        Settings → Remotes &amp; Accessories → Add Accessory{'\n'}
+        and select <Text style={{ color: '#fff' }}>"VirtualGamePad"</Text>.
       </Text>
-    </TouchableOpacity>
+    )}
+
+    {isConnecting && (
+      <View style={styles.advertisingBanner}>
+        <Text style={styles.advertisingTitle}>📡  Phone is discoverable</Text>
+        <Text style={styles.advertisingHint}>
+          Now go to your TV:{'\n'}
+          Settings → Remotes &amp; Accessories → Add Accessory{'\n'}
+          and select <Text style={{ color: '#fff', fontWeight: '700' }}>"VirtualGamePad"</Text>
+        </Text>
+      </View>
+    )}
+
+    {!connectedId && (
+      <TouchableOpacity style={[styles.actionBtn, isConnecting && styles.actionBtnAdvertising]} onPress={onScan} disabled={isConnecting}>
+        <Text style={styles.actionBtnText}>
+          {isConnecting ? '📡  Advertising — waiting for TV…' : '🔍  Make Phone Discoverable'}
+        </Text>
+      </TouchableOpacity>
+    )}
 
     {connectedId ? (
       <TouchableOpacity style={[styles.actionBtn, styles.disconnectBtn]} onPress={onDisconnect}>
@@ -197,7 +212,7 @@ const BluetoothTab: React.FC<BtTabProps> = ({
 
     {devices.length > 0 && (
       <>
-        <Text style={styles.sectionLabel}>AVAILABLE DEVICES</Text>
+        <Text style={styles.sectionLabel}>PAIRED DEVICES — TAP TO CONNECT</Text>
         {devices.map(d => (
           <TouchableOpacity
             key={d.id}
@@ -276,9 +291,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#1565c0', borderRadius: 12,
     paddingVertical: 12, alignItems: 'center', marginTop: 4,
   },
+  actionBtnAdvertising: { backgroundColor: '#1a4a1a', borderWidth: 1, borderColor: '#4ade80' },
   actionBtnDisabled: { opacity: 0.4 },
   disconnectBtn: { backgroundColor: '#7f1d1d' },
   actionBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  advertisingBanner: {
+    backgroundColor: '#0f2a0f', borderRadius: 12,
+    borderWidth: 1, borderColor: '#4ade80',
+    padding: 14, gap: 6,
+  },
+  advertisingTitle: { color: '#4ade80', fontSize: 14, fontWeight: '700' },
+  advertisingHint: { color: '#aaa', fontSize: 12, lineHeight: 18 },
   sectionLabel: {
     color: '#555', fontSize: 10, fontWeight: '700',
     letterSpacing: 1.2, marginTop: 16,

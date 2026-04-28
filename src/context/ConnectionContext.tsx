@@ -11,10 +11,22 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { PermissionsAndroid, Platform } from 'react-native';
 import { WifiConnection, WifiStatus, DEFAULT_PORT } from '../services/WifiConnection';
 import { getButtonBit } from '../utils/buttonMap';
 import { InputEvent } from '../types';
 import BluetoothHid from '../../modules/bluetooth-hid';
+
+// Request runtime BT permissions on Android 12+
+async function requestBluetoothPermissions(): Promise<boolean> {
+  if (Platform.OS !== 'android' || Platform.Version < 31) return true;
+  const results = await PermissionsAndroid.requestMultiple([
+    PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+    PermissionsAndroid.PERMISSIONS.BLUETOOTH_ADVERTISE,
+    PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+  ]);
+  return Object.values(results).every(r => r === PermissionsAndroid.RESULTS.GRANTED);
+}
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -93,10 +105,20 @@ export const ConnectionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const scanBluetooth = useCallback(async () => {
     try {
+      const ok = await requestBluetoothPermissions();
+      if (!ok) {
+        setStatus('error');
+        return;
+      }
+      setMode('bluetooth');
+      setStatus('connecting'); // shows "Advertising…" in UI
       const devices = await BluetoothHid.startAdvertising();
       setBtDevices(devices ?? []);
+      // Stay in 'connecting' until onConnectionStateChange fires
     } catch (e) {
       console.warn('BT scan error', e);
+      setMode('none');
+      setStatus('error');
     }
   }, []);
 
