@@ -27,7 +27,8 @@
         {
           "initialOrientation": "LANDSCAPE"
         }
-      ]
+      ],
+      "./plugins/withAndroidBuildFix"
     ],
     "extra": {
       "eas": {
