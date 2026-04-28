@@ -70,7 +70,8 @@ function AppInner() {
 export default function App() {
   return (
     <GestureHandlerRootView style={styles.root}>
-      <StatusBar hidden />
+      {/* Show status bar — gives natural top gap and avoids full-screen look */}
+      <StatusBar style="light" backgroundColor="#111118" translucent={false} />
       <SettingsProvider>
         <ConnectionProvider>
           <AppInner />
@@ -88,6 +89,9 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#111118',
+    // Small breathing room on all sides so nothing touches the bezel
+    paddingHorizontal: 8,
+    paddingBottom: 8,
   },
   controllerArea: {
     flex: 1,
