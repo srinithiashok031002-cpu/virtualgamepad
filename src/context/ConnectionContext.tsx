@@ -11,7 +11,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Alert, PermissionsAndroid, Platform } from 'react-native';
+import { PermissionsAndroid, Platform, ToastAndroid } from 'react-native';
 import { WifiConnection, WifiStatus, DEFAULT_PORT } from '../services/WifiConnection';
 import { getButtonBit } from '../utils/buttonMap';
 import { InputEvent } from '../types';
@@ -107,26 +107,35 @@ export const ConnectionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const scanBluetooth = useCallback(async () => {
     setBtError(null);
+    // Immediate feedback so user knows the tap registered (works inside Modals)
+    ToastAndroid.show('Starting Bluetooth…', ToastAndroid.SHORT);
+
+    const ok = await requestBluetoothPermissions();
+    if (!ok) {
+      const msg = 'Nearby Devices permission denied. Go to Settings → Apps → VirtualGamePad → Permissions → Nearby devices → Allow.';
+      setBtError(msg);
+      ToastAndroid.showWithGravityAndOffset(msg, ToastAndroid.LONG, ToastAndroid.BOTTOM, 0, 80);
+      return;
+    }
+
+    // Set connecting state, then yield 80 ms so React renders the UI change
+    // before we block on the native HID profile bind
+    setMode('bluetooth');
+    setStatus('connecting');
+    await new Promise<void>(resolve => setTimeout(resolve, 80));
+
     try {
-      const ok = await requestBluetoothPermissions();
-      if (!ok) {
-        const msg = 'Bluetooth permissions denied.\n\nGo to Settings → Apps → VirtualGamePad → Permissions and enable Nearby Devices.';
-        setBtError(msg);
-        Alert.alert('Permission Required', msg);
-        return;
-      }
-      setMode('bluetooth');
-      setStatus('connecting');
       const devices = await BluetoothHid.startAdvertising();
       setBtDevices(devices ?? []);
-      // Stay in 'connecting' until onConnectionStateChange fires from native module
+      ToastAndroid.show('Phone is discoverable — select it on your TV', ToastAndroid.LONG);
     } catch (e: any) {
-      const msg = e?.message ?? String(e) ?? 'Unknown error starting Bluetooth HID';
-      console.warn('BT scan error', e);
+      const msg = e?.message ?? String(e) ?? 'Unknown BT error';
       setBtError(msg);
       setMode('none');
       setStatus('error');
-      Alert.alert('Bluetooth Error', msg);
+      ToastAndroid.showWithGravityAndOffset(
+        'BT Error: ' + msg, ToastAndroid.LONG, ToastAndroid.BOTTOM, 0, 80,
+      );
     }
   }, []);
 

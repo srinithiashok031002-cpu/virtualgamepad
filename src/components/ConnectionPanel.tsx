@@ -95,7 +95,7 @@ export const ConnectionPanel: React.FC<Props> = ({ visible, onClose }) => {
               devices={btDevices}
               connectedId={btConnectedId}
               isConnecting={isConnecting && mode === 'bluetooth'}
-              error={status === 'error' && mode === 'none' ? btError : null}
+              error={btError}
               onScan={scanBluetooth}
               onConnect={connectBluetooth}
               onDisconnect={disconnectBluetooth}
