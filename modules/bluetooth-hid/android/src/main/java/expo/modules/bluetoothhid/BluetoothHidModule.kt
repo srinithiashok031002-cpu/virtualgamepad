@@ -5,7 +5,6 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothHidDevice
 import android.bluetooth.BluetoothHidDeviceAppSdpSettings
 import android.bluetooth.BluetoothProfile
-import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import expo.modules.kotlin.modules.Module
@@ -60,11 +59,12 @@ class BluetoothHidModule : Module() {
         0xC0.toByte()           // End Collection
     )
 
+    // SUBCLASS1_GAMEPAD = 0x08 (HID Device Sub-Class for Gamepads)
     private val SDP_SETTINGS = BluetoothHidDeviceAppSdpSettings(
         "VirtualGamePad",
         "Virtual Game Controller",
         "VirtualGamePad",
-        BluetoothHidDevice.SUBCLASS1_GAMEPAD,
+        0x08.toByte(),   // BluetoothHidDevice.SUBCLASS1_GAMEPAD
         GAMEPAD_DESCRIPTOR
     )
 
@@ -94,15 +94,17 @@ class BluetoothHidModule : Module() {
                 override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
                     val hid = proxy as BluetoothHidDevice
                     hidDevice = hid
+                    // Use Executor SAM constructor (explicit type, avoids Kotlin 2.x inference issue)
+                    val mainExecutor: Executor = Executor { runnable -> runnable.run() }
                     hid.registerApp(
                         SDP_SETTINGS, null, null,
-                        { r -> r.run() } as Executor,
+                        mainExecutor,
                         object : BluetoothHidDevice.Callback() {
                             override fun onAppStatusChanged(pluggedDevice: BluetoothDevice?, registered: Boolean) {}
 
                             override fun onConnectionStateChanged(device: BluetoothDevice, state: Int) {
                                 val connected = state == BluetoothProfile.STATE_CONNECTED
-                                if (connected) connectedHost = device else connectedHost = null
+                                connectedHost = if (connected) device else null
                                 sendEvent("onConnectionStateChange", mapOf(
                                     "deviceId" to device.address,
                                     "deviceName" to (device.name ?: ""),
