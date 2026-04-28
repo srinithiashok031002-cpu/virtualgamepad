@@ -46,6 +46,7 @@ export interface DPadProps {
 export interface AnalogStickProps {
   label: string;
   size?: number;
+  sensitivity?: number;
   onMove: (name: string, pos: StickPosition) => void;
 }
 

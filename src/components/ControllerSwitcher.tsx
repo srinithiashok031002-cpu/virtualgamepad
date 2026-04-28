@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSettings } from '../context/SettingsContext';
+import { SettingsPanel } from './SettingsPanel';
 import { CONTROLLER_LABELS, ControllerType } from '../types';
 
 const CONTROLLERS: ControllerType[] = [
@@ -35,33 +37,51 @@ export const ControllerSwitcher: React.FC<ControllerSwitcherProps> = ({
   current,
   onChange,
 }) => {
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const { customizeMode } = useSettings();
+
   return (
-    <View style={styles.wrapper}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.row}
-      >
-        {CONTROLLERS.map(ctrl => {
-          const active = ctrl === current;
-          return (
-            <TouchableOpacity
-              key={ctrl}
-              style={[
-                styles.tab,
-                active && { backgroundColor: ACCENT_COLORS[ctrl], borderColor: ACCENT_COLORS[ctrl] },
-              ]}
-              onPress={() => onChange(ctrl)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.tabText, active && styles.tabTextActive]}>
-                {CONTROLLER_LABELS[ctrl]}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-    </View>
+    <>
+      <View style={styles.wrapper}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.row}
+        >
+          {CONTROLLERS.map(ctrl => {
+            const active = ctrl === current;
+            return (
+              <TouchableOpacity
+                key={ctrl}
+                style={[
+                  styles.tab,
+                  active && { backgroundColor: ACCENT_COLORS[ctrl], borderColor: ACCENT_COLORS[ctrl] },
+                ]}
+                onPress={() => onChange(ctrl)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.tabText, active && styles.tabTextActive]}>
+                  {CONTROLLER_LABELS[ctrl]}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        {/* Settings gear */}
+        <TouchableOpacity
+          style={[styles.gearBtn, customizeMode && styles.gearBtnActive]}
+          onPress={() => setSettingsOpen(true)}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.gearIcon, customizeMode && styles.gearIconActive]}>
+            {customizeMode ? '✎' : '⚙'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <SettingsPanel visible={settingsOpen} onClose={() => setSettingsOpen(false)} />
+    </>
   );
 };
 
@@ -71,6 +91,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#0d0d1a',
     borderBottomWidth: 1,
     borderBottomColor: '#222',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   row: {
     flexDirection: 'row',
@@ -94,5 +116,23 @@ const styles = StyleSheet.create({
   },
   tabTextActive: {
     color: '#ffffff',
+  },
+  gearBtn: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 4,
+    borderRadius: 18,
+  },
+  gearBtnActive: {
+    backgroundColor: 'rgba(124,77,255,0.2)',
+  },
+  gearIcon: {
+    fontSize: 16,
+    color: '#666',
+  },
+  gearIconActive: {
+    color: '#7c4dff',
   },
 });

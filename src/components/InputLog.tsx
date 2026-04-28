@@ -1,6 +1,11 @@
-import React, { useRef } from 'react';
+/**
+ * InputLog overlay
+ * - Uses pointerEvents="box-none" on outer so touches pass through to the controller
+ * - The list itself has pointerEvents="none" (display only)
+ * - Only the CLEAR button is interactive
+ */
+import React from 'react';
 import {
-  Animated,
   FlatList,
   StyleSheet,
   Text,
@@ -36,25 +41,27 @@ const LogRow = React.memo(({ item }: { item: InputEvent }) => (
 ));
 
 export const InputLog: React.FC<InputLogProps> = ({ events, onClear }) => {
-  const opacity = useRef(new Animated.Value(1)).current;
-
   return (
-    <Animated.View style={[styles.container, { opacity }]}>
+    // box-none: outer container passes touches through; children are still interactive
+    <View style={styles.container} pointerEvents="box-none">
       <View style={styles.header}>
         <Text style={styles.title}>INPUT LOG</Text>
         <TouchableOpacity onPress={onClear} style={styles.clearBtn}>
           <Text style={styles.clearText}>CLEAR</Text>
         </TouchableOpacity>
       </View>
-      <FlatList
-        data={events}
-        keyExtractor={item => item.id}
-        renderItem={({ item }) => <LogRow item={item} />}
-        style={styles.list}
-        showsVerticalScrollIndicator={false}
-        inverted={false}
-      />
-    </Animated.View>
+      {/* List is display-only — touches pass through to controller below */}
+      <View pointerEvents="none">
+        <FlatList
+          data={events}
+          keyExtractor={item => item.id}
+          renderItem={({ item }) => <LogRow item={item} />}
+          style={styles.list}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={false}
+        />
+      </View>
+    </View>
   );
 };
 
@@ -65,7 +72,7 @@ const styles = StyleSheet.create({
     right: 0,
     width: 190,
     maxHeight: 220,
-    backgroundColor: 'rgba(10,10,20,0.88)',
+    backgroundColor: 'rgba(10,10,20,0.82)',
     borderLeftWidth: 1,
     borderBottomWidth: 1,
     borderColor: '#333',

@@ -1,34 +1,18 @@
 /**
- * Nintendo Switch Joy-Con Layout (attached / horizontal mode)
+ * Nintendo Switch Joy-Con Layout
  *
- * Left Joy-Con:
- *   ZL (trigger top)
- *   L  (shoulder)
- *   Left Stick (top-center)
- *   D-Pad (bottom-center)
- *   Minus, Capture (meta row)
- *   SL, SR (side rails — shown as small)
+ * ZL / L and ZR / R are now a top bar spanning the full width,
+ * matching how they appear on the physical JoyCons when held horizontally.
  *
- * Right Joy-Con:
- *   ZR (trigger top)
- *   R  (shoulder)
- *   A(red), B(yellow), X(blue), Y(green) — diamond
- *   Right Stick (below A/B/X/Y)
- *   Plus, Home (meta row)
- *   SL, SR (side rails)
- *
- * Colors:
- *   - Left Joy-Con body: blue (#0ab9e6) — Switch neon blue
- *   - Right Joy-Con body: red (#e60012) — Switch neon red
- *   - A: red circle
- *   - B: yellow circle
- *   - X: blue circle
- *   - Y: green circle
+ * Left Joy-Con body:  L Stick → Minus/Capture → D-Pad
+ * Right Joy-Con body: ABXY diamond → Plus/Home → R Stick
  */
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import { useSettings } from '../context/SettingsContext';
 import { AnalogStick } from '../components/AnalogStick';
 import { DPad } from '../components/DPad';
+import { DraggableGroup } from '../components/DraggableGroup';
 import { GameButton } from '../components/GameButton';
 import { ShoulderButton } from '../components/ShoulderButton';
 import { ControllerProps, StickPosition } from '../types';
@@ -37,6 +21,9 @@ const LEFT_COLOR = '#0ab9e6';
 const RIGHT_COLOR = '#e60012';
 
 export const JoyConController: React.FC<ControllerProps> = ({ onInput }) => {
+  const { sensitivity } = useSettings();
+  const sens = sensitivity / 100;
+
   const press = (name: string) =>
     onInput({ controller: 'JOYCON', type: 'button', name, state: 'pressed' });
   const release = (name: string) =>
@@ -49,82 +36,92 @@ export const JoyConController: React.FC<ControllerProps> = ({ onInput }) => {
     onInput({ controller: 'JOYCON', type: 'stick', name, state: pos });
 
   return (
-    <View style={styles.container}>
-      {/* ===== LEFT JOY-CON ===== */}
-      <View style={[styles.joycon, styles.leftJoyCon]}>
-        {/* ZL + L shoulders */}
-        <View style={styles.shoulderCol}>
-          <ShoulderButton label="ZL" color={LEFT_COLOR} textColor="#fff" width={64} height={24} borderRadius={6} onPress={press} onRelease={release} />
-          <ShoulderButton label="L" color={LEFT_COLOR} textColor="#fff" width={64} height={22} borderRadius={6} onPress={press} onRelease={release} />
-        </View>
+    <View style={styles.root}>
 
-        {/* Main body */}
-        <View style={styles.joyconBody}>
-          {/* Left Stick */}
-          <AnalogStick label="L Stick" size={90} onMove={stickMove} />
+      {/* ══════════════════ TOP TRIGGER BAR ══════════════════ */}
+      <View style={styles.triggerBar}>
+        {/* Left triggers */}
+        <DraggableGroup groupId="jc-left-triggers" label="ZL / L" style={styles.triggerGroup}>
+          <ShoulderButton label="ZL" color={LEFT_COLOR} textColor="#fff" width={72} height={26} borderRadius={6} onPress={press} onRelease={release} />
+          <ShoulderButton label="L"  color={LEFT_COLOR} textColor="#fff" width={72} height={24} borderRadius={6} onPress={press} onRelease={release} />
+        </DraggableGroup>
 
-          {/* Meta row */}
-          <View style={styles.metaRow}>
-            <GameButton label="−" color="#1a1a2a" textColor="#aaa" size={30} shape="circle" fontSize={16} onPress={press} onRelease={release} />
-            <GameButton label="⊡" color="#1a1a2a" textColor="#aaa" size={30} shape="circle" fontSize={14} onPress={press} onRelease={release} />
-          </View>
+        <View style={styles.triggerSpacer} />
 
-          {/* D-Pad */}
-          <DPad size={112} onPress={dpadPress} onRelease={dpadRelease} />
-        </View>
-
-        {/* Side rails */}
-        <View style={styles.sideRail}>
-          <ShoulderButton label="SL" color="#f0f0f0" textColor="#333" width={20} height={44} borderRadius={4} onPress={press} onRelease={release} />
-          <ShoulderButton label="SR" color="#f0f0f0" textColor="#333" width={20} height={44} borderRadius={4} onPress={press} onRelease={release} />
-        </View>
+        {/* Right triggers */}
+        <DraggableGroup groupId="jc-right-triggers" label="ZR / R" style={styles.triggerGroup}>
+          <ShoulderButton label="ZR" color={RIGHT_COLOR} textColor="#fff" width={72} height={26} borderRadius={6} onPress={press} onRelease={release} />
+          <ShoulderButton label="R"  color={RIGHT_COLOR} textColor="#fff" width={72} height={24} borderRadius={6} onPress={press} onRelease={release} />
+        </DraggableGroup>
       </View>
 
-      {/* Spacer */}
-      <View style={styles.gap} />
+      {/* ══════════════════ JOYCON BODIES ══════════════════ */}
+      <View style={styles.bodies}>
 
-      {/* ===== RIGHT JOY-CON ===== */}
-      <View style={[styles.joycon, styles.rightJoyCon]}>
-        {/* Side rails */}
-        <View style={styles.sideRail}>
-          <ShoulderButton label="SL" color="#f0f0f0" textColor="#333" width={20} height={44} borderRadius={4} onPress={press} onRelease={release} />
-          <ShoulderButton label="SR" color="#f0f0f0" textColor="#333" width={20} height={44} borderRadius={4} onPress={press} onRelease={release} />
-        </View>
-
-        {/* Main body */}
-        <View style={styles.joyconBody}>
-          {/* ABXY Diamond */}
-          <View style={styles.diamond}>
-            {/* X top */}
-            <View style={styles.diamondTop}>
-              <GameButton label="X" color="#00a0e9" size={44} shape="circle" fontSize={16} onPress={press} onRelease={release} />
-            </View>
-            {/* Y left, A right */}
-            <View style={styles.diamondMid}>
-              <GameButton label="Y" color="#ffd400" textColor="#1a1a1a" size={44} shape="circle" fontSize={16} onPress={press} onRelease={release} />
-              <View style={{ width: 8 }} />
-              <GameButton label="A" color="#e60012" size={44} shape="circle" fontSize={16} onPress={press} onRelease={release} />
-            </View>
-            {/* B bottom */}
-            <View style={styles.diamondBottom}>
-              <GameButton label="B" color="#ffd400" textColor="#1a1a1a" size={44} shape="circle" fontSize={16} onPress={press} onRelease={release} />
-            </View>
+        {/* ───── LEFT JOY-CON ───── */}
+        <View style={[styles.joycon, styles.leftJoyCon]}>
+          {/* Side rails */}
+          <View style={styles.sideRail}>
+            <ShoulderButton label="SL" color="#f0f0f0" textColor="#333" width={20} height={44} borderRadius={4} onPress={press} onRelease={release} />
+            <ShoulderButton label="SR" color="#f0f0f0" textColor="#333" width={20} height={44} borderRadius={4} onPress={press} onRelease={release} />
           </View>
 
-          {/* Meta row */}
-          <View style={styles.metaRow}>
-            <GameButton label="⌂" color="#1a1a2a" textColor="#aaa" size={30} shape="circle" fontSize={14} onPress={press} onRelease={release} />
-            <GameButton label="+" color="#1a1a2a" textColor="#aaa" size={30} shape="circle" fontSize={16} onPress={press} onRelease={release} />
-          </View>
+          {/* Main body */}
+          <View style={styles.joyconBody}>
+            <DraggableGroup groupId="jc-lstick" label="L Stick">
+              <AnalogStick label="L Stick" size={90} sensitivity={sens} onMove={stickMove} />
+            </DraggableGroup>
 
-          {/* Right Stick */}
-          <AnalogStick label="R Stick" size={90} onMove={stickMove} />
+            <View style={styles.metaRow}>
+              <GameButton label="−" color="#1a1a2a" textColor="#aaa" size={30} shape="circle" fontSize={16} onPress={press} onRelease={release} />
+              <GameButton label="⊡" color="#1a1a2a" textColor="#aaa" size={30} shape="circle" fontSize={14} onPress={press} onRelease={release} />
+            </View>
+
+            <DraggableGroup groupId="jc-dpad" label="D-Pad">
+              <DPad size={112} onPress={dpadPress} onRelease={dpadRelease} />
+            </DraggableGroup>
+          </View>
         </View>
 
-        {/* ZR + R shoulders */}
-        <View style={styles.shoulderCol}>
-          <ShoulderButton label="ZR" color={RIGHT_COLOR} textColor="#fff" width={64} height={24} borderRadius={6} onPress={press} onRelease={release} />
-          <ShoulderButton label="R" color={RIGHT_COLOR} textColor="#fff" width={64} height={22} borderRadius={6} onPress={press} onRelease={release} />
+        {/* Spacer */}
+        <View style={styles.gap} />
+
+        {/* ───── RIGHT JOY-CON ───── */}
+        <View style={[styles.joycon, styles.rightJoyCon]}>
+          {/* Main body */}
+          <View style={styles.joyconBody}>
+            {/* ABXY Diamond */}
+            <DraggableGroup groupId="jc-abxy" label="ABXY">
+              <View style={styles.diamond}>
+                <View style={styles.diamondTop}>
+                  <GameButton label="X" color="#00a0e9" size={44} shape="circle" fontSize={16} onPress={press} onRelease={release} />
+                </View>
+                <View style={styles.diamondMid}>
+                  <GameButton label="Y" color="#ffd400" textColor="#1a1a1a" size={44} shape="circle" fontSize={16} onPress={press} onRelease={release} />
+                  <View style={{ width: 8 }} />
+                  <GameButton label="A" color="#e60012" size={44} shape="circle" fontSize={16} onPress={press} onRelease={release} />
+                </View>
+                <View style={styles.diamondBottom}>
+                  <GameButton label="B" color="#ffd400" textColor="#1a1a1a" size={44} shape="circle" fontSize={16} onPress={press} onRelease={release} />
+                </View>
+              </View>
+            </DraggableGroup>
+
+            <View style={styles.metaRow}>
+              <GameButton label="⌂" color="#1a1a2a" textColor="#aaa" size={30} shape="circle" fontSize={14} onPress={press} onRelease={release} />
+              <GameButton label="+" color="#1a1a2a" textColor="#aaa" size={30} shape="circle" fontSize={16} onPress={press} onRelease={release} />
+            </View>
+
+            <DraggableGroup groupId="jc-rstick" label="R Stick">
+              <AnalogStick label="R Stick" size={90} sensitivity={sens} onMove={stickMove} />
+            </DraggableGroup>
+          </View>
+
+          {/* Side rails */}
+          <View style={styles.sideRail}>
+            <ShoulderButton label="SL" color="#f0f0f0" textColor="#333" width={20} height={44} borderRadius={4} onPress={press} onRelease={release} />
+            <ShoulderButton label="SR" color="#f0f0f0" textColor="#333" width={20} height={44} borderRadius={4} onPress={press} onRelease={release} />
+          </View>
         </View>
       </View>
     </View>
@@ -132,12 +129,33 @@ export const JoyConController: React.FC<ControllerProps> = ({ onInput }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
+    flex: 1,
+    flexDirection: 'column',
+  },
+  // ── Trigger bar ──
+  triggerBar: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    paddingBottom: 2,
+  },
+  triggerGroup: {
+    flexDirection: 'row',
+    gap: 6,
+    alignItems: 'center',
+  },
+  triggerSpacer: {
+    flex: 1,
+  },
+  // ── Bodies ──
+  bodies: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
     paddingHorizontal: 4,
+    paddingBottom: 8,
   },
   joycon: {
     flexDirection: 'row',
@@ -165,10 +183,6 @@ const styles = StyleSheet.create({
     gap: 10,
     flex: 1,
     paddingVertical: 4,
-  },
-  shoulderCol: {
-    gap: 4,
-    alignItems: 'center',
   },
   sideRail: {
     gap: 6,

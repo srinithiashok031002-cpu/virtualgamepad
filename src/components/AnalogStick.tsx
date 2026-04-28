@@ -9,6 +9,7 @@ const DEAD_ZONE = 0.08;
 export const AnalogStick: React.FC<AnalogStickProps> = ({
   label,
   size = 100,
+  sensitivity = 1.0,
   onMove,
 }) => {
   const KNOB_SIZE = size * 0.42;
@@ -78,8 +79,8 @@ export const AnalogStick: React.FC<AnalogStickProps> = ({
       translateX.setValue(cx);
       translateY.setValue(cy);
 
-      const nx = cx / MAX_TRAVEL;
-      const ny = cy / MAX_TRAVEL;
+      const nx = Math.max(-1, Math.min(1, (cx / MAX_TRAVEL) * sensitivity));
+      const ny = Math.max(-1, Math.min(1, (cy / MAX_TRAVEL) * sensitivity));
 
       const pos: StickPosition = {
         x: Math.abs(nx) < DEAD_ZONE ? 0 : parseFloat(nx.toFixed(2)),

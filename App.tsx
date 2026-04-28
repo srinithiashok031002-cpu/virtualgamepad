@@ -4,6 +4,7 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView, StyleSheet, View } from 'react-native';
 
+import { SettingsProvider, useSettings } from './src/context/SettingsContext';
 import { ControllerSwitcher } from './src/components/ControllerSwitcher';
 import { InputLog } from './src/components/InputLog';
 import { useInputLog } from './src/hooks/useInputLog';
@@ -16,9 +17,12 @@ import { PlayStationController } from './src/controllers/PlayStationController';
 import { SegaGenesisController } from './src/controllers/SegaGenesisController';
 import { SegaSaturnController } from './src/controllers/SegaSaturnController';
 
-export default function App() {
+// ─── Inner app (needs SettingsContext) ───────────────────────────────────────
+
+function AppInner() {
   const [activeController, setActiveController] = useState<ControllerType>('PLAYSTATION');
   const { events, logEvent, clearLog } = useInputLog();
+  const { showInputLog, transparency } = useSettings();
 
   // Lock to landscape on mount
   useEffect(() => {
@@ -39,21 +43,36 @@ export default function App() {
     }
   };
 
+  // transparency 0 → opacity 1.0, transparency 80 → opacity 0.2
+  const controllerOpacity = 1 - transparency / 100;
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      {/* Top bar — controller tabs + settings gear */}
+      <ControllerSwitcher current={activeController} onChange={setActiveController} />
+
+      {/* Controller area with transparency applied */}
+      <View style={[styles.controllerArea, { opacity: controllerOpacity }]}>
+        {renderController()}
+      </View>
+
+      {/* Input log overlay — only shown when enabled in settings */}
+      {showInputLog && (
+        <InputLog events={events} onClear={clearLog} />
+      )}
+    </SafeAreaView>
+  );
+}
+
+// ─── Root (provides context) ─────────────────────────────────────────────────
+
+export default function App() {
   return (
     <GestureHandlerRootView style={styles.root}>
       <StatusBar hidden />
-      <SafeAreaView style={styles.safeArea}>
-        {/* Top bar — controller tabs */}
-        <ControllerSwitcher current={activeController} onChange={setActiveController} />
-
-        {/* Controller area */}
-        <View style={styles.controllerArea}>
-          {renderController()}
-        </View>
-
-        {/* Input log overlay (top-right) */}
-        <InputLog events={events} onClear={clearLog} />
-      </SafeAreaView>
+      <SettingsProvider>
+        <AppInner />
+      </SettingsProvider>
     </GestureHandlerRootView>
   );
 }
