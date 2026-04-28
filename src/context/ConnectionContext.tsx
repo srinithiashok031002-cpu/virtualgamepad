@@ -11,7 +11,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { PermissionsAndroid, Platform } from 'react-native';
+import { Alert, PermissionsAndroid, Platform } from 'react-native';
 import { WifiConnection, WifiStatus, DEFAULT_PORT } from '../services/WifiConnection';
 import { getButtonBit } from '../utils/buttonMap';
 import { InputEvent } from '../types';
@@ -36,6 +36,7 @@ export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'er
 interface ConnectionContextType {
   mode: ConnectionMode;
   status: ConnectionStatus;
+  btError: string | null;
   wifiIp: string;
   wifiPort: number;
   btDevices: BtDevice[];
@@ -79,6 +80,7 @@ export const ConnectionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [wifiPort, setWifiPort] = useState(DEFAULT_PORT);
   const [btDevices, setBtDevices] = useState<BtDevice[]>([]);
   const [btConnectedId, setBtConnectedId] = useState<string | null>(null);
+  const [btError, setBtError] = useState<string | null>(null);
 
   const wifi = useRef(new WifiConnection(s => {
     setStatus(s as ConnectionStatus);
@@ -104,21 +106,27 @@ export const ConnectionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // ── Bluetooth ─────────────────────────────────────────────────────────────
 
   const scanBluetooth = useCallback(async () => {
+    setBtError(null);
     try {
       const ok = await requestBluetoothPermissions();
       if (!ok) {
-        setStatus('error');
+        const msg = 'Bluetooth permissions denied.\n\nGo to Settings → Apps → VirtualGamePad → Permissions and enable Nearby Devices.';
+        setBtError(msg);
+        Alert.alert('Permission Required', msg);
         return;
       }
       setMode('bluetooth');
-      setStatus('connecting'); // shows "Advertising…" in UI
+      setStatus('connecting');
       const devices = await BluetoothHid.startAdvertising();
       setBtDevices(devices ?? []);
-      // Stay in 'connecting' until onConnectionStateChange fires
-    } catch (e) {
+      // Stay in 'connecting' until onConnectionStateChange fires from native module
+    } catch (e: any) {
+      const msg = e?.message ?? String(e) ?? 'Unknown error starting Bluetooth HID';
       console.warn('BT scan error', e);
+      setBtError(msg);
       setMode('none');
       setStatus('error');
+      Alert.alert('Bluetooth Error', msg);
     }
   }, []);
 
@@ -215,7 +223,7 @@ export const ConnectionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   return (
     <ConnectionContext.Provider value={{
-      mode, status, wifiIp, wifiPort, btDevices, btConnectedId,
+      mode, status, btError, wifiIp, wifiPort, btDevices, btConnectedId,
       setWifiIp, setWifiPort,
       connectWifi, disconnectWifi,
       scanBluetooth, connectBluetooth, disconnectBluetooth,

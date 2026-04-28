@@ -32,7 +32,7 @@ const STATUS_COLOR: Record<string, string> = {
 export const ConnectionPanel: React.FC<Props> = ({ visible, onClose }) => {
   const [tab, setTab] = useState<Tab>('wifi');
   const {
-    mode, status,
+    mode, status, btError,
     wifiIp, wifiPort, setWifiIp, setWifiPort,
     connectWifi, disconnectWifi,
     btDevices, btConnectedId,
@@ -95,6 +95,7 @@ export const ConnectionPanel: React.FC<Props> = ({ visible, onClose }) => {
               devices={btDevices}
               connectedId={btConnectedId}
               isConnecting={isConnecting && mode === 'bluetooth'}
+              error={status === 'error' && mode === 'none' ? btError : null}
               onScan={scanBluetooth}
               onConnect={connectBluetooth}
               onDisconnect={disconnectBluetooth}
@@ -168,21 +169,29 @@ const WifiTab: React.FC<WifiTabProps> = ({
 interface BtTabProps {
   devices: BtDevice[]; connectedId: string | null;
   isConnecting: boolean;
+  error: string | null;
   onScan: () => void;
   onConnect: (id: string) => void;
   onDisconnect: () => void;
 }
 
 const BluetoothTab: React.FC<BtTabProps> = ({
-  devices, connectedId, isConnecting, onScan, onConnect, onDisconnect,
+  devices, connectedId, isConnecting, error, onScan, onConnect, onDisconnect,
 }) => (
   <View style={styles.tabContent}>
-    {!isConnecting && !connectedId && (
+    {!isConnecting && !connectedId && !error && (
       <Text style={styles.hint}>
         Tap the button below, then on your Android TV go to{'\n'}
         Settings → Remotes &amp; Accessories → Add Accessory{'\n'}
         and select <Text style={{ color: '#fff' }}>"VirtualGamePad"</Text>.
       </Text>
+    )}
+
+    {error && (
+      <View style={styles.errorBanner}>
+        <Text style={styles.errorTitle}>⚠️  Bluetooth Error</Text>
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
     )}
 
     {isConnecting && (
@@ -295,6 +304,13 @@ const styles = StyleSheet.create({
   actionBtnDisabled: { opacity: 0.4 },
   disconnectBtn: { backgroundColor: '#7f1d1d' },
   actionBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  errorBanner: {
+    backgroundColor: '#2a0f0f', borderRadius: 12,
+    borderWidth: 1, borderColor: '#f87171',
+    padding: 14, gap: 6,
+  },
+  errorTitle: { color: '#f87171', fontSize: 13, fontWeight: '700' },
+  errorText: { color: '#ccc', fontSize: 12, lineHeight: 18 },
   advertisingBanner: {
     backgroundColor: '#0f2a0f', borderRadius: 12,
     borderWidth: 1, borderColor: '#4ade80',
