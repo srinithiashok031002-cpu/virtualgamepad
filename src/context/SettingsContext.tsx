@@ -17,11 +17,13 @@ interface SettingsContextType {
   // Sliders (0–100 %)
   transparency: number;   // 0 = fully visible, 100 = invisible
   sensitivity: number;    // 50 = 0.5×, 100 = 1.0×, 200 = 2.0×
+  buttonScale: number;    // 60 = 0.6×, 100 = 1.0×, 150 = 1.5×
   // Actions
   toggleInputLog: () => void;
   toggleCustomizeMode: () => void;
   setTransparency: (v: number) => void;
   setSensitivity: (v: number) => void;
+  setButtonScale: (v: number) => void;
   // Drag offsets (keyed by groupId)
   getOffset: (groupId: string) => ButtonOffset;
   resetOffsets: () => void;
@@ -44,6 +46,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [customizeMode, setCustomizeMode] = useState(false);
   const [transparency, setTransparencyState] = useState(0);
   const [sensitivity, setSensitivityState] = useState(100); // 100 = 1.0×
+  const [buttonScale, setButtonScaleState] = useState(100); // 100 = 1.0×
 
   // Offset map — stable Animated.Values per groupId
   const offsetMap = useRef<Record<string, ButtonOffset>>({});
@@ -73,6 +76,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const toggleCustomizeMode = useCallback(() => setCustomizeMode(v => !v), []);
   const setTransparency = useCallback((v: number) => setTransparencyState(Math.round(v)), []);
   const setSensitivity = useCallback((v: number) => setSensitivityState(Math.round(v)), []);
+  const setButtonScale = useCallback((v: number) => setButtonScaleState(Math.round(v)), []);
 
   return (
     <SettingsContext.Provider
@@ -81,10 +85,12 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         customizeMode,
         transparency,
         sensitivity,
+        buttonScale,
         toggleInputLog,
         toggleCustomizeMode,
         setTransparency,
         setSensitivity,
+        setButtonScale,
         getOffset,
         resetOffsets,
       }}

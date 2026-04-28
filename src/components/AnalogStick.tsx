@@ -2,16 +2,19 @@ import React, { useCallback, useRef } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { triggerButtonPress, triggerStickSnap } from '../utils/haptics';
+import { useSettings } from '../context/SettingsContext';
 import { AnalogStickProps, StickPosition } from '../types';
 
 const DEAD_ZONE = 0.08;
 
 export const AnalogStick: React.FC<AnalogStickProps> = ({
   label,
-  size = 100,
+  size: rawSize = 100,
   sensitivity = 1.0,
   onMove,
 }) => {
+  const { buttonScale } = useSettings();
+  const size = rawSize * (buttonScale / 100);
   const KNOB_SIZE = size * 0.42;
   const MAX_TRAVEL = (size - KNOB_SIZE) / 2;
 

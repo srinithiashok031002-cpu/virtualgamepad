@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { Animated, StyleSheet, Text } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { triggerButtonPress, triggerButtonRelease } from '../utils/haptics';
+import { useSettings } from '../context/SettingsContext';
 
 interface ShoulderButtonProps {
   label: string;
@@ -24,6 +25,8 @@ export const ShoulderButton: React.FC<ShoulderButtonProps> = ({
   onPress,
   onRelease,
 }) => {
+  const { buttonScale } = useSettings();
+  const bs = buttonScale / 100;
   const scale = useRef(new Animated.Value(1)).current;
 
   const gesture = Gesture.Manual()
@@ -47,7 +50,7 @@ export const ShoulderButton: React.FC<ShoulderButtonProps> = ({
       <Animated.View
         style={[
           styles.btn,
-          { width, height, borderRadius, backgroundColor: color, transform: [{ scale }] },
+          { width: width * bs, height: height * bs, borderRadius: borderRadius * bs, backgroundColor: color, transform: [{ scale }] },
         ]}
       >
         <Text style={[styles.text, { color: textColor }]}>{label}</Text>

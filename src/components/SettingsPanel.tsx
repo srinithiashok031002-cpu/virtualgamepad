@@ -56,6 +56,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ visible, onClose }
     customizeMode, toggleCustomizeMode,
     transparency, setTransparency,
     sensitivity, setSensitivity,
+    buttonScale, setButtonScale,
     resetOffsets,
   } = useSettings();
 
@@ -95,6 +96,15 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ visible, onClose }
               accentColor="#7c4dff"
               onChange={setTransparency}
               formatValue={v => `${v}%`}
+            />
+            <SimpleSlider
+              label="Button Size"
+              value={buttonScale}
+              min={60}
+              max={150}
+              accentColor="#ff9800"
+              onChange={setButtonScale}
+              formatValue={v => (v / 100).toFixed(2) + '×'}
             />
           </Section>
 

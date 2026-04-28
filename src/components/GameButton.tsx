@@ -10,6 +10,7 @@ import {
   Gesture,
 } from 'react-native-gesture-handler';
 import { triggerButtonPress, triggerButtonRelease } from '../utils/haptics';
+import { useSettings } from '../context/SettingsContext';
 import { GameButtonProps } from '../types';
 
 export const GameButton: React.FC<GameButtonProps> = ({
@@ -24,6 +25,8 @@ export const GameButton: React.FC<GameButtonProps> = ({
   onRelease,
   fontSize = 13,
 }) => {
+  const { buttonScale } = useSettings();
+  const s = buttonScale / 100;
   const scale = useRef(new Animated.Value(1)).current;
 
   const animateIn = useCallback(() => {
@@ -60,15 +63,16 @@ export const GameButton: React.FC<GameButtonProps> = ({
       onRelease(label);
     });
 
-  const btnWidth = width ?? size;
-  const btnHeight = height ?? size;
+  const btnWidth = (width ?? size) * s;
+  const btnHeight = (height ?? size) * s;
+  const scaledFont = fontSize * s;
 
   const borderRadius =
     shape === 'circle'
-      ? size / 2
+      ? btnWidth / 2
       : shape === 'rounded'
-      ? 10
-      : 6;
+      ? 10 * s
+      : 6 * s;
 
   return (
     <GestureDetector gesture={gesture}>
@@ -84,7 +88,7 @@ export const GameButton: React.FC<GameButtonProps> = ({
           },
         ]}
       >
-        <Text style={[styles.label, { color: textColor, fontSize }]}>{label}</Text>
+        <Text style={[styles.label, { color: textColor, fontSize: scaledFont }]}>{label}</Text>
       </Animated.View>
     </GestureDetector>
   );

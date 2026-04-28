@@ -5,6 +5,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useSettings } from '../context/SettingsContext';
 import {
   Gesture,
   GestureDetector,
@@ -29,7 +30,9 @@ function detectDirection(x: number, y: number, size: number): Direction | null {
   return dy > 0 ? 'DOWN' : 'UP';
 }
 
-export const DPad: React.FC<DPadProps> = ({ onPress, onRelease, size = 124 }) => {
+export const DPad: React.FC<DPadProps> = ({ onPress, onRelease, size: rawSize = 124 }) => {
+  const { buttonScale } = useSettings();
+  const size = rawSize * (buttonScale / 100);
   const activeDir = useRef<Direction | null>(null);
   const scales = useRef<Record<Direction, Animated.Value>>({
     UP: new Animated.Value(1),
