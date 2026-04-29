@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { SafeAreaView, StatusBar as RNStatusBar, StyleSheet, View } from 'react-native';
 
 import { SettingsProvider, useSettings } from './src/context/SettingsContext';
-import { ConnectionProvider } from './src/context/ConnectionContext';
+import { ConnectionProvider, useConnection } from './src/context/ConnectionContext';
 import { ControllerSwitcher } from './src/components/ControllerSwitcher';
 import { InputLog } from './src/components/InputLog';
 import { useInputLog } from './src/hooks/useInputLog';
@@ -24,6 +24,7 @@ function AppInner() {
   const [activeController, setActiveController] = useState<ControllerType>('PLAYSTATION');
   const { events, logEvent, clearLog } = useInputLog();
   const { showInputLog, transparency } = useSettings();
+  const { sendEvent } = useConnection();
 
   // Lock to landscape on mount
   useEffect(() => {
@@ -33,7 +34,12 @@ function AppInner() {
   }, []);
 
   const renderController = () => {
-    const props = { onInput: logEvent };
+    const props = {
+      onInput: (e: Parameters<typeof logEvent>[0]) => {
+        logEvent(e);    // show in input log
+        sendEvent(e);   // forward over WiFi / Bluetooth HID
+      },
+    };
     switch (activeController) {
       case 'NES':           return <NESController {...props} />;
       case 'SEGA_GENESIS':  return <SegaGenesisController {...props} />;
