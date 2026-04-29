@@ -179,12 +179,33 @@ const BluetoothTab: React.FC<BtTabProps> = ({
   devices, connectedId, isConnecting, error, onScan, onConnect, onDisconnect,
 }) => (
   <View style={styles.tabContent}>
+    {/* Button always first so it's visible without scrolling */}
+    {!connectedId && (
+      <TouchableOpacity
+        style={[styles.actionBtn, isConnecting && styles.actionBtnAdvertising]}
+        onPress={onScan}
+        disabled={isConnecting}
+      >
+        <Text style={styles.actionBtnText}>
+          {isConnecting ? '📡  Advertising — waiting for TV…' : '🔍  Make Phone Discoverable'}
+        </Text>
+      </TouchableOpacity>
+    )}
+
+    {/* Hint shown only in idle state, below the button */}
     {!isConnecting && !connectedId && !error && (
       <Text style={styles.hint}>
-        Tap the button below, then on your Android TV go to{'\n'}
-        Settings → Remotes &amp; Accessories → Add Accessory{'\n'}
-        and select <Text style={{ color: '#fff' }}>"VirtualGamePad"</Text>.
+        Then on your TV: Settings → Remotes &amp; Accessories → Add Accessory → select <Text style={{ color: '#fff' }}>"VirtualGamePad"</Text>
       </Text>
+    )}
+
+    {isConnecting && (
+      <View style={styles.advertisingBanner}>
+        <Text style={styles.advertisingTitle}>📡  Phone is discoverable</Text>
+        <Text style={styles.advertisingHint}>
+          On your TV: Settings → Remotes &amp; Accessories → Add Accessory → select <Text style={{ color: '#fff', fontWeight: '700' }}>"VirtualGamePad"</Text>
+        </Text>
+      </View>
     )}
 
     {error && (
@@ -194,22 +215,9 @@ const BluetoothTab: React.FC<BtTabProps> = ({
       </View>
     )}
 
-    {isConnecting && (
-      <View style={styles.advertisingBanner}>
-        <Text style={styles.advertisingTitle}>📡  Phone is discoverable</Text>
-        <Text style={styles.advertisingHint}>
-          Now go to your TV:{'\n'}
-          Settings → Remotes &amp; Accessories → Add Accessory{'\n'}
-          and select <Text style={{ color: '#fff', fontWeight: '700' }}>"VirtualGamePad"</Text>
-        </Text>
-      </View>
-    )}
-
-    {!connectedId && (
-      <TouchableOpacity style={[styles.actionBtn, isConnecting && styles.actionBtnAdvertising]} onPress={onScan} disabled={isConnecting}>
-        <Text style={styles.actionBtnText}>
-          {isConnecting ? '📡  Advertising — waiting for TV…' : '🔍  Make Phone Discoverable'}
-        </Text>
+    {connectedId && (
+      <TouchableOpacity style={[styles.actionBtn, styles.disconnectBtn]} onPress={onDisconnect}>
+        <Text style={styles.actionBtnText}>Disconnect</Text>
       </TouchableOpacity>
     )}
 
