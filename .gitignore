@@ -11,3 +11,6 @@ build/
 web-build/
 .DS_Store
 *.log
+
+# Local Android SDK path — generated per-machine, not for CI
+android/local.properties
