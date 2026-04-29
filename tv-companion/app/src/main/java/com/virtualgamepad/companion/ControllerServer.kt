@@ -30,6 +30,8 @@ class ControllerServer(port: Int = 8765) : WebSocketServer(InetSocketAddress(por
 
     // Current button bitmask (updated on each button event)
     private var buttonMask = 0
+    // Last hat value so we can release old direction before pressing new one
+    private var prevHat = 8 // 8 = neutral
 
     override fun onOpen(conn: WebSocket, handshake: ClientHandshake) {
         println("VGP: phone connected from ${conn.remoteSocketAddress}")
@@ -45,6 +47,7 @@ class ControllerServer(port: Int = 8765) : WebSocketServer(InetSocketAddress(por
             when (json.getString("type")) {
                 "button" -> handleButton(json)
                 "axis"   -> handleAxis(json)
+                "dpad"   -> handleDpad(json)
             }
         } catch (_: Exception) {}
     }
@@ -74,6 +77,18 @@ class ControllerServer(port: Int = 8765) : WebSocketServer(InetSocketAddress(por
         if (bit < InputRelay.BIT_TO_KEYCODE.size) {
             InputRelay.dispatchKey(InputRelay.BIT_TO_KEYCODE[bit], pressed)
         }
+    }
+
+    private fun handleDpad(json: JSONObject) {
+        val hat = json.getInt("hat")
+        // Neutral (8) = release all directions; any other value = press
+        if (hat == 8) {
+            InputRelay.dispatchHat(prevHat, false)
+        } else {
+            if (prevHat != 8) InputRelay.dispatchHat(prevHat, false) // release old
+            InputRelay.dispatchHat(hat, true)
+        }
+        prevHat = hat
     }
 
     private fun handleAxis(json: JSONObject) {

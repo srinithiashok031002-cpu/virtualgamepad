@@ -12,9 +12,9 @@
 
     <application
         android:label="VGP Companion"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/ic_launcher"
         android:theme="@style/Theme.Leanback"
-        android:banner="@mipmap/ic_launcher">
+        android:banner="@drawable/ic_banner">
 
         <activity
             android:name=".MainActivity"

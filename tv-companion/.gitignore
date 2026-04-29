@@ -1,0 +1,16 @@
+# Build outputs
+build/
+app/build/
+.gradle/
+
+# Machine-specific SDK path — regenerate on each machine
+local.properties
+
+# IntelliJ / Android Studio
+.idea/
+*.iml
+*.hprof
+
+# Keystore (keep debug.keystore out too — it's regenerated automatically)
+*.jks
+*.keystore

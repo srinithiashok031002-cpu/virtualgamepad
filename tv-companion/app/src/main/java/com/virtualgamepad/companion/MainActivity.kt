@@ -4,13 +4,12 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.os.IBinder
-import android.text.format.Formatter
 import android.widget.Button
 import android.widget.TextView
 import androidx.fragment.app.FragmentActivity
+import java.net.NetworkInterface
 
 /**
  * Launcher activity for the VGP TV Companion.
@@ -154,11 +153,19 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    @Suppress("DEPRECATION")
     private fun getLocalIp(): String {
         return try {
-            val wm = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-            Formatter.formatIpAddress(wm.connectionInfo.ipAddress)
+            // NetworkInterface works on all Android versions including TV on Android 10+
+            NetworkInterface.getNetworkInterfaces()
+                .asSequence()
+                .flatMap { iface -> iface.inetAddresses.asSequence()
+                    .filter { addr ->
+                        !addr.isLoopbackAddress &&
+                        addr.hostAddress?.contains(':') == false // IPv4 only
+                    }
+                    .map { it.hostAddress ?: "" }
+                }
+                .firstOrNull { it.isNotEmpty() } ?: "unknown"
         } catch (_: Exception) {
             "unknown"
         }
