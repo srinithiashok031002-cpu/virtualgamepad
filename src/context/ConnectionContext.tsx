@@ -13,7 +13,7 @@ import React, {
 } from 'react';
 import { PermissionsAndroid, Platform, ToastAndroid } from 'react-native';
 import { WifiConnection, WifiStatus, DEFAULT_PORT } from '../services/WifiConnection';
-import { getButtonBit, computeHatValue, DpadState, DPAD_NAMES } from '../utils/buttonMap';
+import { getButtonBit, computeHatValue, DpadState, DPAD_NAMES, CBUTTON_AXES, CBUTTON_NAMES } from '../utils/buttonMap';
 import { InputEvent } from '../types';
 import BluetoothHid from '../../modules/bluetooth-hid';
 
@@ -219,6 +219,25 @@ export const ConnectionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           const s = stickState.current;
           BluetoothHid.sendReport(
             buttonMask.current, hat,
+            Math.round(s.lx * 127), Math.round(s.ly * 127),
+            Math.round(s.rx * 127), Math.round(s.ry * 127),
+          ).catch(() => {});
+        }
+        return;
+      }
+
+      // ── N64 C-buttons: route to right stick axes ─────────────────────────
+      if (CBUTTON_NAMES.has(event.name)) {
+        const cmap = CBUTTON_AXES[event.name];
+        if (cmap.axis === 'rx') stickState.current.rx = pressed ? cmap.direction : 0;
+        else                    stickState.current.ry = pressed ? cmap.direction : 0;
+
+        const s = stickState.current;
+        if (mode === 'wifi') {
+          wifi.send({ type: 'axis', lx: s.lx, ly: s.ly, rx: s.rx, ry: s.ry });
+        } else if (mode === 'bluetooth') {
+          BluetoothHid.sendReport(
+            buttonMask.current, computeHatValue(dpadState.current),
             Math.round(s.lx * 127), Math.round(s.ly * 127),
             Math.round(s.rx * 127), Math.round(s.ry * 127),
           ).catch(() => {});

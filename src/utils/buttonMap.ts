@@ -34,7 +34,7 @@ const BUTTON_MAP: Record<string, number> = {
   // Bit 4 = BUTTON_Y
   'Y': 4, 'Triangle': 4, '△': 4,
   // Bit 5 = BUTTON_Z
-  'Z': 5,                              // N64 Z / Genesis Z
+  'Z': 5,                              // N64 Z / Genesis Z (distinct from C-buttons)
   'ZL': 8,                             // JoyCon ZL → L2
   'ZR': 9,                             // JoyCon ZR → R2
   // ── Shoulders ─────────────────────────────────────────────────────────────
@@ -47,13 +47,11 @@ const BUTTON_MAP: Record<string, number> = {
   'Start': 11, 'Options': 11, '+': 11, 'START': 11, '⌂': 11,
   // ── Stick clicks ──────────────────────────────────────────────────────────
   'L3': 12, 'R3': 13,
-  // ── N64 C-buttons ─────────────────────────────────────────────────────────
-  'C▲': 4,  // → BUTTON_Y
-  'C▶': 3,  // → BUTTON_X
-  'C▼': 2,  // → BUTTON_C
-  'C◀': 5,  // → BUTTON_Z
   // ── Sega Saturn extra ─────────────────────────────────────────────────────
   'Saturn-L': 10, 'Saturn-R': 11,
+  // NOTE: N64 C-buttons (C▲ C▼ C◀ C▶) are NOT in this map.
+  // They are routed to the right analog stick axes in sendEvent so that
+  // M64Plus FZ (and other N64 emulators) auto-detect them as C-buttons.
 };
 
 /** Returns the bit position (0-15) for a button name, or -1 if unknown. */
@@ -101,3 +99,21 @@ export const DPAD_NAMES = new Set([
   'D-Pad LEFT', 'LEFT',
   'D-Pad RIGHT', 'RIGHT',
 ]);
+
+// ── N64 C-Button → Right Stick Axis mapping ───────────────────────────────────
+// Android has no "C-Left" keycode. Routing C-buttons through the right analog
+// stick axes is the standard approach — M64Plus FZ auto-detects them correctly.
+
+export interface CButtonAxis {
+  axis: 'rx' | 'ry';
+  direction: 1 | -1;   // +1 = positive axis, -1 = negative axis
+}
+
+export const CBUTTON_AXES: Record<string, CButtonAxis> = {
+  'C▲': { axis: 'ry', direction: -1 },  // right stick up
+  'C▼': { axis: 'ry', direction:  1 },  // right stick down
+  'C◀': { axis: 'rx', direction: -1 },  // right stick left
+  'C▶': { axis: 'rx', direction:  1 },  // right stick right
+};
+
+export const CBUTTON_NAMES = new Set(Object.keys(CBUTTON_AXES));
