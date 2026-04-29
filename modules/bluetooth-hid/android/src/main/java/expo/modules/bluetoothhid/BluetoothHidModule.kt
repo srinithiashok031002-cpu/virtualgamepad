@@ -31,6 +31,19 @@ import java.util.concurrent.Executor
 class BluetoothHidModule : Module() {
 
     // ─── HID Descriptor ──────────────────────────────────────────────────────
+    //
+    // Report layout (7 bytes total):
+    //   Byte 0-1 : 16-bit button bitmask (little-endian)
+    //              Bit 0=BUTTON_A, 1=B, 2=C, 3=X, 4=Y, 5=Z,
+    //              6=L1, 7=R1, 8=L2, 9=R2, 10=SELECT, 11=START,
+    //              12=THUMBL, 13=THUMBR, 14-15=unused
+    //   Byte 2   : Hat Switch (D-Pad) in bits [3:0], padding in [7:4]
+    //              0=N,1=NE,2=E,3=SE,4=S,5=SW,6=W,7=NW, 8=neutral
+    //   Byte 3   : Left stick X  (-127..127)
+    //   Byte 4   : Left stick Y  (-127..127)
+    //   Byte 5   : Right stick X (-127..127)
+    //   Byte 6   : Right stick Y (-127..127)
+    //
     private val GAMEPAD_DESCRIPTOR = byteArrayOf(
         0x05, 0x01,             // Usage Page (Generic Desktop)
         0x09, 0x05,             // Usage (Gamepad)
@@ -45,6 +58,23 @@ class BluetoothHidModule : Module() {
         0x75, 0x01,             //   Report Size (1)
         0x95.toByte(), 0x10,    //   Report Count (16)
         0x81.toByte(), 0x02,    //   Input (Data, Variable, Absolute)
+
+        // ── Hat Switch (D-Pad) ────────────────────────────────────────────────
+        0x05, 0x01,             //   Usage Page (Generic Desktop)
+        0x09, 0x39,             //   Usage (Hat Switch)
+        0x15, 0x00,             //   Logical Minimum (0)
+        0x25, 0x07,             //   Logical Maximum (7)
+        0x35, 0x00,             //   Physical Minimum (0)
+        0x46, 0x3B.toByte(), 0x01, // Physical Maximum (315 degrees)
+        0x65, 0x14,             //   Unit (Degrees)
+        0x75, 0x04,             //   Report Size (4)
+        0x95.toByte(), 0x01,    //   Report Count (1)
+        0x81.toByte(), 0x42,    //   Input (Data, Variable, Absolute, Null State)
+
+        // ── 4-bit padding ─────────────────────────────────────────────────────
+        0x75, 0x04,             //   Report Size (4)
+        0x95.toByte(), 0x01,    //   Report Count (1)
+        0x81.toByte(), 0x03,    //   Input (Constant)
 
         // ── 4 Analog Axes (LX, LY, RX, RY) ──────────────────────────────────
         0x05, 0x01,             //   Usage Page (Generic Desktop)
@@ -167,20 +197,22 @@ class BluetoothHidModule : Module() {
         }
 
         // ── sendReport ──────────────────────────────────────────────────────
-        AsyncFunction("sendReport") { buttons: Int, lx: Int, ly: Int, rx: Int, ry: Int, promise: Promise ->
+        // hat: 0=N,1=NE,2=E,3=SE,4=S,5=SW,6=W,7=NW, 8=neutral (Null State)
+        AsyncFunction("sendReport") { buttons: Int, hat: Int, lx: Int, ly: Int, rx: Int, ry: Int, promise: Promise ->
             val host = connectedHost
             val hid = hidDevice
             if (host == null || hid == null) {
                 promise.resolve(null) // silently drop if not connected
                 return@AsyncFunction
             }
-            val report = ByteArray(6)
+            val report = ByteArray(7)
             report[0] = (buttons and 0xFF).toByte()
             report[1] = ((buttons shr 8) and 0xFF).toByte()
-            report[2] = lx.toByte()
-            report[3] = ly.toByte()
-            report[4] = rx.toByte()
-            report[5] = ry.toByte()
+            report[2] = (hat and 0x0F).toByte()  // 4-bit hat in low nibble, high nibble = 0 (padding)
+            report[3] = lx.toByte()
+            report[4] = ly.toByte()
+            report[5] = rx.toByte()
+            report[6] = ry.toByte()
             hid.sendReport(host, 0, report)
             promise.resolve(null)
         }

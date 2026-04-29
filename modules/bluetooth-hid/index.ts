@@ -25,7 +25,7 @@ interface BluetoothHidModuleType {
   stopAdvertising(): Promise<void>;
   connect(deviceId: string): Promise<void>;
   disconnect(): Promise<void>;
-  sendReport(buttons: number, lx: number, ly: number, rx: number, ry: number): Promise<void>;
+  sendReport(buttons: number, hat: number, lx: number, ly: number, rx: number, ry: number): Promise<void>;
   addListener(eventName: string, listener: (e: any) => void): { remove: () => void };
 }
 
@@ -68,14 +68,15 @@ const BluetoothHid = {
 
   /**
    * Send a gamepad HID report.
-   * @param buttons 16-bit button bitmask
+   * @param buttons 16-bit button bitmask (see buttonMap.ts for bit positions)
+   * @param hat     D-Pad hat switch: 0=N,1=NE,2=E,3=SE,4=S,5=SW,6=W,7=NW, 8=neutral
    * @param lx      Left stick X  (-127 to 127)
    * @param ly      Left stick Y  (-127 to 127)
    * @param rx      Right stick X (-127 to 127)
    * @param ry      Right stick Y (-127 to 127)
    */
-  sendReport(buttons: number, lx: number, ly: number, rx: number, ry: number): Promise<void> {
-    return BluetoothHidNative?.sendReport(buttons, lx, ly, rx, ry) ?? Promise.resolve();
+  sendReport(buttons: number, hat: number, lx: number, ly: number, rx: number, ry: number): Promise<void> {
+    return BluetoothHidNative?.sendReport(buttons, hat, lx, ly, rx, ry) ?? Promise.resolve();
   },
 
   /** Subscribe to Bluetooth HID connection state changes. */

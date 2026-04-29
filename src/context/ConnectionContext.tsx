@@ -13,7 +13,7 @@ import React, {
 } from 'react';
 import { PermissionsAndroid, Platform, ToastAndroid } from 'react-native';
 import { WifiConnection, WifiStatus, DEFAULT_PORT } from '../services/WifiConnection';
-import { getButtonBit } from '../utils/buttonMap';
+import { getButtonBit, computeHatValue, DpadState, DPAD_NAMES } from '../utils/buttonMap';
 import { InputEvent } from '../types';
 import BluetoothHid from '../../modules/bluetooth-hid';
 
@@ -95,6 +95,7 @@ export const ConnectionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const stickState = useRef<StickState>({ lx: 0, ly: 0, rx: 0, ry: 0 });
   const buttonMask = useRef(0); // 16-bit bitmask
+  const dpadState = useRef<DpadState>({ up: false, down: false, left: false, right: false });
 
   // Keep modeRef in sync with state so callbacks always have the latest value
   useEffect(() => { modeRef.current = mode; }, [mode]);
@@ -199,27 +200,50 @@ export const ConnectionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const sendEvent = useCallback((event: Omit<InputEvent, 'id' | 'timestamp'>) => {
     if (mode === 'none') return;
 
+    const pressed = event.state === 'pressed';
+
     if (event.type === 'button' || event.type === 'dpad') {
+      // ── D-Pad: route through Hat Switch, not button bitmask ──────────────
+      if (DPAD_NAMES.has(event.name)) {
+        const dp = dpadState.current;
+        const name = event.name.toUpperCase();
+        if (name.includes('UP'))    dp.up    = pressed;
+        if (name.includes('DOWN'))  dp.down  = pressed;
+        if (name.includes('LEFT'))  dp.left  = pressed;
+        if (name.includes('RIGHT')) dp.right = pressed;
+
+        const hat = computeHatValue(dp);
+        if (mode === 'wifi') {
+          wifi.send({ type: 'dpad', hat });
+        } else if (mode === 'bluetooth') {
+          const s = stickState.current;
+          BluetoothHid.sendReport(
+            buttonMask.current, hat,
+            Math.round(s.lx * 127), Math.round(s.ly * 127),
+            Math.round(s.rx * 127), Math.round(s.ry * 127),
+          ).catch(() => {});
+        }
+        return;
+      }
+
+      // ── Regular button: update bitmask ────────────────────────────────────
       const bit = getButtonBit(event.name);
       if (bit < 0) return;
-      const pressed = event.state === 'pressed' ? 1 : 0;
 
-      // Update bitmask
       if (pressed) buttonMask.current |= (1 << bit);
       else         buttonMask.current &= ~(1 << bit);
 
       if (mode === 'wifi') {
-        wifi.send({ type: 'button', bit, state: pressed as 0 | 1 });
+        wifi.send({ type: 'button', bit, state: pressed ? 1 : 0 });
       } else if (mode === 'bluetooth') {
         const s = stickState.current;
         BluetoothHid.sendReport(
-          buttonMask.current,
-          Math.round(s.lx * 127),
-          Math.round(s.ly * 127),
-          Math.round(s.rx * 127),
-          Math.round(s.ry * 127),
+          buttonMask.current, computeHatValue(dpadState.current),
+          Math.round(s.lx * 127), Math.round(s.ly * 127),
+          Math.round(s.rx * 127), Math.round(s.ry * 127),
         ).catch(() => {});
       }
+
     } else if (event.type === 'stick') {
       const pos = event.state as { x: number; y: number };
       const isLeft = event.name.toLowerCase().includes('left') ||
@@ -239,11 +263,9 @@ export const ConnectionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         wifi.send({ type: 'axis', lx: s.lx, ly: s.ly, rx: s.rx, ry: s.ry });
       } else if (mode === 'bluetooth') {
         BluetoothHid.sendReport(
-          buttonMask.current,
-          Math.round(s.lx * 127),
-          Math.round(s.ly * 127),
-          Math.round(s.rx * 127),
-          Math.round(s.ry * 127),
+          buttonMask.current, computeHatValue(dpadState.current),
+          Math.round(s.lx * 127), Math.round(s.ly * 127),
+          Math.round(s.rx * 127), Math.round(s.ry * 127),
         ).catch(() => {});
       }
     }
