@@ -1,11 +1,13 @@
 /**
- * ConnectionPanel — modal sheet with WiFi and Bluetooth tabs.
+ * ConnectionPanel — fullscreen modal with WiFi and Bluetooth tabs.
  */
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
+  SafeAreaView,
   ScrollView,
+  StatusBar as RNStatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -43,27 +45,22 @@ export const ConnectionPanel: React.FC<Props> = ({ visible, onClose }) => {
   const isConnecting = status === 'connecting';
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
-
-      <View style={styles.sheet}>
-        <View style={styles.handle} />
-
+    <Modal visible={visible} transparent={false} animationType="slide" onRequestClose={onClose}>
+      <SafeAreaView style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>📡  Connect to TV</Text>
-          <TouchableOpacity style={styles.doneBtn} onPress={onClose}>
-            <Text style={styles.doneBtnText}>Done</Text>
+          <TouchableOpacity style={styles.backBtn} onPress={onClose}>
+            <Text style={styles.backBtnText}>✕</Text>
           </TouchableOpacity>
-        </View>
-
-        {/* Status badge */}
-        <View style={styles.statusRow}>
-          <View style={[styles.statusDot, { backgroundColor: STATUS_COLOR[status] }]} />
-          <Text style={[styles.statusText, { color: STATUS_COLOR[status] }]}>
-            {mode === 'none' ? 'Not connected' : `${mode.toUpperCase()} — ${status}`}
-          </Text>
-          {isConnecting && <ActivityIndicator size="small" color="#facc15" style={{ marginLeft: 8 }} />}
+          <Text style={styles.headerTitle}>📡  Connect to TV</Text>
+          {/* Status badge */}
+          <View style={styles.statusBadge}>
+            <View style={[styles.statusDot, { backgroundColor: STATUS_COLOR[status] }]} />
+            <Text style={[styles.statusText, { color: STATUS_COLOR[status] }]}>
+              {mode === 'none' ? 'Not connected' : `${mode.toUpperCase()} — ${status}`}
+            </Text>
+            {isConnecting && <ActivityIndicator size="small" color="#facc15" style={{ marginLeft: 6 }} />}
+          </View>
         </View>
 
         {/* Tabs */}
@@ -81,7 +78,12 @@ export const ConnectionPanel: React.FC<Props> = ({ visible, onClose }) => {
           ))}
         </View>
 
-        <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
+        {/* Content */}
+        <ScrollView
+          style={styles.body}
+          contentContainerStyle={styles.bodyContent}
+          keyboardShouldPersistTaps="handled"
+        >
           {tab === 'wifi' ? (
             <WifiTab
               ip={wifiIp} port={wifiPort}
@@ -101,9 +103,8 @@ export const ConnectionPanel: React.FC<Props> = ({ visible, onClose }) => {
               onDisconnect={disconnectBluetooth}
             />
           )}
-          <View style={{ height: 24 }} />
         </ScrollView>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 };
@@ -179,10 +180,9 @@ const BluetoothTab: React.FC<BtTabProps> = ({
   devices, connectedId, isConnecting, error, onScan, onConnect, onDisconnect,
 }) => (
   <View style={styles.tabContent}>
-    {/* Button always first so it's visible without scrolling */}
     {!connectedId && (
       <TouchableOpacity
-        style={[styles.actionBtn, isConnecting && styles.actionBtnAdvertising]}
+        style={[styles.actionBtn, styles.actionBtnLarge, isConnecting && styles.actionBtnAdvertising]}
         onPress={onScan}
         disabled={isConnecting}
       >
@@ -192,10 +192,10 @@ const BluetoothTab: React.FC<BtTabProps> = ({
       </TouchableOpacity>
     )}
 
-    {/* Hint shown only in idle state, below the button */}
     {!isConnecting && !connectedId && !error && (
       <Text style={styles.hint}>
-        Then on your TV: Settings → Remotes &amp; Accessories → Add Accessory → select <Text style={{ color: '#fff' }}>"VirtualGamePad"</Text>
+        Then on your TV: Settings → Remotes &amp; Accessories → Add Accessory → select{' '}
+        <Text style={{ color: '#fff' }}>"VirtualGamePad"</Text>
       </Text>
     )}
 
@@ -203,7 +203,8 @@ const BluetoothTab: React.FC<BtTabProps> = ({
       <View style={styles.advertisingBanner}>
         <Text style={styles.advertisingTitle}>📡  Phone is discoverable</Text>
         <Text style={styles.advertisingHint}>
-          On your TV: Settings → Remotes &amp; Accessories → Add Accessory → select <Text style={{ color: '#fff', fontWeight: '700' }}>"VirtualGamePad"</Text>
+          On your TV: Settings → Remotes &amp; Accessories → Add Accessory → select{' '}
+          <Text style={{ color: '#fff', fontWeight: '700' }}>"VirtualGamePad"</Text>
         </Text>
       </View>
     )}
@@ -220,12 +221,6 @@ const BluetoothTab: React.FC<BtTabProps> = ({
         <Text style={styles.actionBtnText}>Disconnect</Text>
       </TouchableOpacity>
     )}
-
-    {connectedId ? (
-      <TouchableOpacity style={[styles.actionBtn, styles.disconnectBtn]} onPress={onDisconnect}>
-        <Text style={styles.actionBtnText}>Disconnect</Text>
-      </TouchableOpacity>
-    ) : null}
 
     {devices.length > 0 && (
       <>
@@ -250,91 +245,85 @@ const BluetoothTab: React.FC<BtTabProps> = ({
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' },
-  sheet: {
+  container: {
+    flex: 1,
     backgroundColor: '#13131f',
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    borderTopWidth: 1,
-    borderColor: '#2a2a3e',
-    maxHeight: '80%',
-    paddingHorizontal: 20,
-    paddingBottom: 8,
-  },
-  handle: {
-    width: 38, height: 4,
-    backgroundColor: '#333', borderRadius: 2,
-    alignSelf: 'center', marginTop: 10, marginBottom: 4,
+    paddingTop: RNStatusBar.currentHeight ?? 0,
   },
   header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#1e1e30',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1e1e30',
+    gap: 12,
   },
-  headerTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  doneBtn: {
-    paddingHorizontal: 12, paddingVertical: 4,
-    backgroundColor: '#1565c0', borderRadius: 10,
+  backBtn: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: '#1a1a2e', alignItems: 'center', justifyContent: 'center',
   },
-  doneBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
-  statusRow: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingVertical: 8,
-  },
-  statusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 8 },
+  backBtnText: { color: '#aaa', fontSize: 14, fontWeight: '700' },
+  headerTitle: { color: '#fff', fontSize: 16, fontWeight: '700', flex: 1 },
+  statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  statusDot: { width: 8, height: 8, borderRadius: 4 },
   statusText: { fontSize: 12, fontWeight: '600' },
-  tabs: { flexDirection: 'row', gap: 8, paddingVertical: 10 },
+  tabs: {
+    flexDirection: 'row', gap: 10,
+    paddingHorizontal: 16, paddingVertical: 12,
+    borderBottomWidth: 1, borderBottomColor: '#1e1e30',
+  },
   tabBtn: {
-    flex: 1, paddingVertical: 8, borderRadius: 10,
+    flex: 1, paddingVertical: 10, borderRadius: 10,
     backgroundColor: '#1a1a2e', alignItems: 'center',
     borderWidth: 1, borderColor: '#2a2a3e',
   },
   tabBtnActive: { backgroundColor: '#1565c0', borderColor: '#1565c0' },
-  tabText: { color: '#888', fontSize: 13, fontWeight: '600' },
+  tabText: { color: '#888', fontSize: 14, fontWeight: '600' },
   tabTextActive: { color: '#fff' },
   body: { flex: 1 },
-  tabContent: { gap: 10 },
+  bodyContent: { padding: 20, gap: 14 },
+  tabContent: { gap: 14 },
   hint: {
-    color: '#666', fontSize: 12, lineHeight: 18,
-    backgroundColor: '#1a1a2e', padding: 12, borderRadius: 10,
+    color: '#666', fontSize: 13, lineHeight: 20,
+    backgroundColor: '#1a1a2e', padding: 14, borderRadius: 12,
   },
-  fieldLabel: { color: '#888', fontSize: 12, fontWeight: '600', marginTop: 4 },
+  fieldLabel: { color: '#888', fontSize: 12, fontWeight: '600' },
   input: {
     backgroundColor: '#1a1a2e', color: '#fff',
     borderRadius: 10, borderWidth: 1, borderColor: '#2a2a3e',
-    paddingHorizontal: 14, paddingVertical: 10,
-    fontSize: 14,
+    paddingHorizontal: 14, paddingVertical: 12,
+    fontSize: 15,
   },
   actionBtn: {
-    backgroundColor: '#1565c0', borderRadius: 12,
-    paddingVertical: 12, alignItems: 'center', marginTop: 4,
+    backgroundColor: '#1565c0', borderRadius: 14,
+    paddingVertical: 14, alignItems: 'center',
   },
+  actionBtnLarge: { paddingVertical: 18 },
   actionBtnAdvertising: { backgroundColor: '#1a4a1a', borderWidth: 1, borderColor: '#4ade80' },
   actionBtnDisabled: { opacity: 0.4 },
   disconnectBtn: { backgroundColor: '#7f1d1d' },
-  actionBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  actionBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
   errorBanner: {
     backgroundColor: '#2a0f0f', borderRadius: 12,
-    borderWidth: 1, borderColor: '#f87171',
-    padding: 14, gap: 6,
+    borderWidth: 1, borderColor: '#f87171', padding: 16, gap: 6,
   },
-  errorTitle: { color: '#f87171', fontSize: 13, fontWeight: '700' },
-  errorText: { color: '#ccc', fontSize: 12, lineHeight: 18 },
+  errorTitle: { color: '#f87171', fontSize: 14, fontWeight: '700' },
+  errorText: { color: '#ccc', fontSize: 13, lineHeight: 20 },
   advertisingBanner: {
     backgroundColor: '#0f2a0f', borderRadius: 12,
-    borderWidth: 1, borderColor: '#4ade80',
-    padding: 14, gap: 6,
+    borderWidth: 1, borderColor: '#4ade80', padding: 16, gap: 6,
   },
-  advertisingTitle: { color: '#4ade80', fontSize: 14, fontWeight: '700' },
-  advertisingHint: { color: '#aaa', fontSize: 12, lineHeight: 18 },
+  advertisingTitle: { color: '#4ade80', fontSize: 15, fontWeight: '700' },
+  advertisingHint: { color: '#aaa', fontSize: 13, lineHeight: 20 },
   sectionLabel: {
-    color: '#555', fontSize: 10, fontWeight: '700',
-    letterSpacing: 1.2, marginTop: 16,
+    color: '#555', fontSize: 11, fontWeight: '700', letterSpacing: 1.2,
   },
   deviceRow: {
-    backgroundColor: '#1a1a2e', borderRadius: 10,
-    padding: 14, borderWidth: 1, borderColor: '#2a2a3e',
+    backgroundColor: '#1a1a2e', borderRadius: 12,
+    padding: 16, borderWidth: 1, borderColor: '#2a2a3e',
   },
   deviceRowActive: { borderColor: '#4ade80' },
-  deviceName: { color: '#ddd', fontSize: 14, fontWeight: '600' },
-  deviceStatus: { color: '#555', fontSize: 11, marginTop: 2 },
+  deviceName: { color: '#ddd', fontSize: 15, fontWeight: '600' },
+  deviceStatus: { color: '#555', fontSize: 12, marginTop: 3 },
 });
