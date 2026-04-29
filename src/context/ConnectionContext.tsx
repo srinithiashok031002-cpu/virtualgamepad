@@ -82,7 +82,13 @@ export const ConnectionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [btConnectedId, setBtConnectedId] = useState<string | null>(null);
   const [btError, setBtError] = useState<string | null>(null);
 
+  // Track current mode in a ref so the WiFi callback closure always sees fresh value
+  const modeRef = useRef<ConnectionMode>('none');
+
   const wifi = useRef(new WifiConnection(s => {
+    // Only update mode/status if we're actually in WiFi mode.
+    // This prevents a failed WiFi attempt from killing an active BT connection.
+    if (modeRef.current !== 'wifi') return;
     setStatus(s as ConnectionStatus);
     if (s === 'disconnected' || s === 'error') setMode('none');
   })).current;
@@ -90,9 +96,17 @@ export const ConnectionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const stickState = useRef<StickState>({ lx: 0, ly: 0, rx: 0, ry: 0 });
   const buttonMask = useRef(0); // 16-bit bitmask
 
+  // Keep modeRef in sync with state so callbacks always have the latest value
+  useEffect(() => { modeRef.current = mode; }, [mode]);
+
   // ── WiFi ──────────────────────────────────────────────────────────────────
 
   const connectWifi = useCallback(() => {
+    // Don't clobber an active Bluetooth connection
+    if (modeRef.current === 'bluetooth') {
+      ToastAndroid.show('Disconnect Bluetooth first before connecting via WiFi.', ToastAndroid.LONG);
+      return;
+    }
     setMode('wifi');
     wifi.connect(wifiIp, wifiPort);
   }, [wifiIp, wifiPort]);
@@ -107,6 +121,11 @@ export const ConnectionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const scanBluetooth = useCallback(async () => {
     setBtError(null);
+    // Don't clobber an active WiFi connection
+    if (modeRef.current === 'wifi') {
+      ToastAndroid.show('Disconnect WiFi first before connecting via Bluetooth.', ToastAndroid.LONG);
+      return;
+    }
     // Immediate feedback so user knows the tap registered (works inside Modals)
     ToastAndroid.show('Starting Bluetooth…', ToastAndroid.SHORT);
 
